@@ -10,3 +10,19 @@ Airflow 기반 공공데이터 수집 파이프라인
 - Airflow
 - PostgreSQL
 - Docker
+
+
+## Data Source
+
+AirKorea Open API
+
+시도별 실시간 대기오염 정보 조회
+
+Example fields
+
+stationName
+dataTime
+pm10Value
+pm25Value
+o3Value
+no2Value
