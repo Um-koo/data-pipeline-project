@@ -14,15 +14,19 @@ Airflow 기반 공공데이터 수집 파이프라인
 
 ## Data Source
 
+## Data Source
+
 AirKorea Open API
 
-시도별 실시간 대기오염 정보 조회
+Endpoint
+https://apis.data.go.kr/B552584/ArpltnInforInqireSvc
 
-Example fields
+API
+getCtprvnRltmMesureDnsty
 
-stationName
-dataTime
-pm10Value
-pm25Value
-o3Value
-no2Value
+Example Parameters
+
+sidoName=서울
+returnType=json
+numOfRows=100
+pageNo=1
