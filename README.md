@@ -1,69 +1,86 @@
-# Data Pipeline Project
+Data Pipeline Project
+Airflow 기반 공공 데이터 수집 및 적재 파이프라인
 
-Airflow 기반 공공데이터 수집 파이프라인
+1. 프로젝트 개요
 
-## 목적
-외부 공공데이터 API를 수집하고 PostgreSQL에 적재하는 데이터 파이프라인 구축
+공공 API(에어코리아)를 활용하여 데이터를 수집하고,
+Airflow DAG를 통해 자동화된 ETL 파이프라인을 구축하였다.
 
-## 기술 스택
-- Python
-- Airflow
-- PostgreSQL
-- Docker
+수집된 데이터는 PostgreSQL에 적재되며,
+데이터 분석 및 데이터 플랫폼 구축의 기반이 되는 구조를 설계하는 것을 목표로 한다.
 
+2. 목적
 
-## Data Source
+공공 데이터 API 기반 데이터 수집 자동화
 
-## Data Source
+Airflow를 활용한 ETL 파이프라인 구성
 
-AirKorea Open API
+PostgreSQL 기반 데이터 적재 구조 설계
 
-Endpoint
-https://apis.data.go.kr/B552584/ArpltnInforInqireSvc
+Docker 기반 실행 환경 구성
 
-API
-getCtprvnRltmMesureDnsty
-
-Example Parameters
-
-sidoName=서울
-returnType=json
-numOfRows=100
-pageNo=1
-
-
-## Pipeline Architecture
-
-AirKorea OpenAPI에서 대기오염 데이터를 수집하여
-Python 기반 ETL을 통해 PostgreSQL에 저장하는 데이터 파이프라인
-
-### Data Flow
+3. 시스템 구성
 
 AirKorea API
-↓
-Python Extract (requests)
-↓
-JSON 데이터 수신
-↓
-Transform (Pandas DataFrame 변환)
-↓
-데이터 정제
-↓
-PostgreSQL 저장
-↓
-Data Platform API 제공
+→ Python ETL Script
+→ Airflow DAG
+→ PostgreSQL
 
-## ETL Process
+4. 기술 스택
 
-### Extract
+Python
 
-AirKorea OpenAPI 호출
+Apache Airflow
 
-### Transform
+PostgreSQL
 
-JSON 데이터를 DataFrame으로 변환  
-필요한 컬럼만 선택
+Docker / Docker Compose
 
-### Load
+5. 프로젝트 구조
 
-정제된 데이터를 PostgreSQL에 저장
+data-pipeline-project
+├── config/
+├── dags/
+├── scripts/
+├── data/raw/
+├── docker-compose.yaml
+├── .gitignore
+├── README.md
+└── LICENSE
+
+6. 데이터 처리 흐름
+
+AirKorea API 호출
+
+데이터 수집 및 파일 저장
+
+Airflow DAG 실행
+
+PostgreSQL 적재
+
+분석 가능한 데이터 구조 생성
+
+7. 실행 방법
+
+Docker 실행
+docker compose up -d
+
+Airflow 접속
+http://localhost:8080
+
+DAG 실행
+airkorea_etl_dag 실행
+
+8. 향후 개선
+
+Kafka 기반 스트리밍 파이프라인 구축
+
+Spark 기반 대용량 데이터 처리
+
+AWS 기반 클라우드 아키텍처 확장
+
+CI/CD 자동화
+
+9. 작성자
+
+Um-koo
