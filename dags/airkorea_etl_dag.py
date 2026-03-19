@@ -1,67 +1,68 @@
 """
-AirKorea Data Pipeline DAG
+airkorea_etl_dag.py
 
-이 DAG는 AirKorea OpenAPI 데이터를 ETL 처리하여
-PostgreSQL 데이터베이스에 적재하는 파이프라인이다.
+목적:
+Airflow에서 AirKorea 데이터 적재 스크립트를 자동으로 실행하기 위한 DAG 파일이다.
 
-파이프라인 흐름
+역할:
+- Airflow UI에 DAG를 등록한다.
+- BashOperator를 통해 Python 적재 스크립트를 실행한다.
+- CSV -> PostgreSQL 적재 작업을 매일 1회 자동 실행할 수 있게 한다.
 
-AirKorea API
-→ CSV 저장
-→ PostgreSQL 적재
+현재 구조:
+Airflow DAG
+    -> BashOperator
+        -> load_to_postgres.py 실행
 
-현재 DAG에서는 기존에 작성한 Python 스크립트
-scripts/load_to_postgres.py 를 실행하여
-CSV 데이터를 PostgreSQL로 적재한다.
+참고:
+현재는 학습 및 검증 목적의 단일 Task 구조이며,
+향후에는 extract / transform / load를 각각 분리한 다중 Task DAG로 확장할 수 있다.
 
-작성 목적
-Data Engineering Portfolio - Data Pipeline 구현
+또한 기존 airflow.operators.bash.BashOperator import 방식은
+deprecation 경고가 발생하므로,
+안정화 단계에서는 providers.standard 경로로 변경하였다.
 """
 
-# 날짜 및 시간 관련 객체
+# 날짜/시간 객체
 from datetime import datetime
 
 # Airflow DAG 객체
 from airflow import DAG
 
-# Bash 명령을 실행하기 위한 Operator
-from airflow.operators.bash import BashOperator
+# Bash 명령 실행용 Operator
+# 기존 airflow.operators.bash.BashOperator 대신
+# 권장 경로인 airflow.providers.standard.operators.bash.BashOperator 사용
+from airflow.providers.standard.operators.bash import BashOperator
 
 
-# DAG 정의 시작
+# DAG 정의
 with DAG(
-
-    # Airflow UI에서 표시될 DAG 이름
+    # Airflow UI에 표시될 DAG 이름
     dag_id="airkorea_etl_pipeline",
 
     # DAG 시작 기준 날짜
-    start_date=datetime(2026, 3, 16),
+    # 자동 실행 스케줄이 적용될 기준 시점이다.
+    start_date=datetime(2026, 3, 19),
 
-    # 자동 스케줄 설정
-    # None → 수동 실행
-    schedule=None,
-
-    # 과거 실행(catchup) 방지
+    # 매일 1회 자동 실행하도록 설정
+    # 기존에는 schedule=None 이었으나, 안정화 단계에서 @daily 로 변경 
+    # 이후 로컬 테스트를 위하여 
+    #schedule="@daily",
+    schedule="*/2 * * * *"
+    # 과거 날짜 기준으로 누락 실행을 자동 보충하지 않도록 설정
     catchup=False,
 
-    # Airflow UI에서 DAG 분류용 태그
+    # Airflow UI에서 DAG 검색 및 분류에 사용할 태그
     tags=["airkorea", "etl", "postgres"],
-
 ) as dag:
 
-    """
-    Task 정의
-
-    이 Task는 기존 Python 스크립트를 실행한다.
-    """
-
-    run_load_script = BashOperator(
-
-        # Task 이름 (UI에 표시됨)
+    # 단일 Task 정의
+    # BashOperator를 이용해 Python 적재 스크립트를 실행한다.
+    run_load_to_postgres = BashOperator(
+        # Airflow UI에서 표시될 Task 이름
         task_id="run_load_to_postgres",
 
-        # 실행할 명령어
-        # Airflow Docker 컨테이너 내부에서 Python 실행
-        bash_command="python /opt/airflow/scripts/load_to_postgres.py"
-
+        # Airflow Docker 컨테이너 내부에서 실행할 명령
+        # scripts 폴더가 /opt/airflow/scripts 로 마운트되어 있어야 한다.
+        bash_command="python /opt/airflow/scripts/load_to_postgres.py",
     )
