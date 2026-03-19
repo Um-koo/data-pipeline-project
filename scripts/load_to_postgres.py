@@ -1,5 +1,5 @@
 import pandas as pd
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 
 # 1. CSV 파일 경로
 csv_path = "/opt/airflow/data/raw/airkorea_seoul.csv"
@@ -32,14 +32,39 @@ engine = create_engine(
     f"postgresql+psycopg2://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}"
 )
 
-# 6. PostgreSQL에 데이터 적재
-df.to_sql(
-    name="airkorea_measurements",
-    con=engine,
-    if_exists="append",
-    index=False
-)
+# 6. PostgreSQL에 데이터 적재 (중복 방지 포함)
+# 기존 to_sql 방식은 중복 시 에러 발생 → ON CONFLICT DO NOTHING 방식으로 변경
+insert_sql = text("""
+    INSERT INTO airkorea_measurements (
+        station_name,
+        sido_name,
+        data_time,
+        pm10_value,
+        pm25_value,
+        o3_value,
+        no2_value,
+        co_value,
+        so2_value
+    )
+    VALUES (
+        :station_name,
+        :sido_name,
+        :data_time,
+        :pm10_value,
+        :pm25_value,
+        :o3_value,
+        :no2_value,
+        :co_value,
+        :so2_value
+    )
+    ON CONFLICT (station_name, data_time) DO NOTHING
+""")
+
+records = df.to_dict(orient="records")
+
+with engine.begin() as conn:
+    conn.execute(insert_sql, records)
 
 # 7. 결과 출력
 print("CSV 데이터 PostgreSQL 적재 완료")
-print(f"적재 건수: {len(df)}")
+print(f"읽은 건수: {len(df)}")
