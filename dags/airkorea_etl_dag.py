@@ -21,6 +21,8 @@ Airflow DAG
 또한 기존 airflow.operators.bash.BashOperator import 방식은
 deprecation 경고가 발생하므로,
 안정화 단계에서는 providers.standard 경로로 변경하였다.
+
+(저장용메모)
 """
 
 # 날짜/시간 객체
