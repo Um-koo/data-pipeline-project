@@ -9,6 +9,9 @@ Airflow 기반 공공 데이터 수집 및 적재 파이프라인
 공공 API(에어코리아)를 활용하여 데이터를 수집하고,  
 Airflow DAG를 통해 자동화된 ETL 파이프라인을 구축하였다.
 
+초기에는 CSV 기반 데이터 적재 구조를 구현하였으며,  
+이후 안정화 단계에서 자동 스케줄링, 중복 데이터 방지, 재실행 안정성(idempotent)을 확보하였다.
+
 수집된 데이터는 PostgreSQL에 적재되며,  
 데이터 분석 및 데이터 플랫폼 구축의 기반이 되는 구조를 설계하는 것을 목표로 한다.
 
@@ -65,10 +68,12 @@ data-pipeline-project
 ## 6. 데이터 처리 흐름
 
 1. AirKorea API 호출  
-2. 데이터 수집 및 파일 저장  
-3. Airflow DAG 실행  
-4. PostgreSQL 적재  
-5. 분석 가능한 데이터 구조 생성  
+2. 데이터 수집 및 CSV 파일 저장  
+3. Airflow DAG 자동 실행  
+4. Python ETL Script 실행  
+5. 데이터 전처리 (컬럼 정리)  
+6. PostgreSQL 적재 (중복 방지 적용)  
+7. 분석 가능한 데이터 구조 생성  
 
 ---
 
@@ -98,7 +103,7 @@ http://localhost:8080
 실무 적용성과 확장성을 고려하여 다음과 같은 방향으로 개선할 수 있다.
 
 ### 1. 데이터 품질 및 적재 로직 개선
-- 중복 데이터 방지를 위한 Primary Key 및 Upsert 로직 적용
+- 중복 데이터 방지를 위한 UNIQUE 및 Upsert 로직 적용
 - INSERT 중심 구조 → 데이터 정합성 보장 구조로 개선
 - 데이터 적재 시 무결성 및 일관성 확보
 
@@ -138,7 +143,33 @@ http://localhost:8080
 - 코드 변경 시 DAG 및 데이터 처리 자동 반영
 
 ---
+## 9. 안정화 (Stabilize)
 
-## 9. 작성자
+초기 구현 단계에서는 DAG를 재실행할 경우 동일 데이터가 중복 적재되는 문제가 발생하였다.
+
+### 문제
+- pandas의 `to_sql(..., if_exists="append")` 방식 사용
+- 중복 방지 로직 부재
+
+### 해결
+- `(station_name, data_time)` 기준 UNIQUE 제약 확인
+- PostgreSQL INSERT 시 `ON CONFLICT DO NOTHING` 적용
+
+### 결과
+- DAG 재실행 시 중복 데이터 미발생
+- 동일 작업 반복 실행 가능 (idempotent 확보)
+- 자동 스케줄 환경에서도 안정적 동작 확인
+
+또한 DAG 스케줄링을 적용하여  
+수동 실행에서 자동 실행 구조로 전환하였다.
+
+- `schedule="@daily"`
+- `catchup=False`
+
+이를 통해 실제 운영 가능한 ETL 파이프라인 구조를 확보하였다.
+
+---
+
+## 10. 작성자
 
 Um-koo
